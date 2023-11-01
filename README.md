@@ -1,9 +1,16 @@
-## Install dependencies
+# UCC AI Quest 2023
+
+https://challenges.ai/ucc-ai-quest-2023
 https://github.com/ReML-AI/ucc-ai-quest-baseline
+
+
+## Install dependencies
 ```
 conda create -n ucc python=3.10
-pip install torch torchvision lightning albumentations matplotlib
 conda activate ucc
+git clone https://github.com/kaylode/ucc-ai-quest-2023
+cd ucc-ai-quest-2023
+pip install -e .
 ```
 
 ## Unzip warmup.zip in data folder so it has the following structure
