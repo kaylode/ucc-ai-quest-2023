@@ -1,4 +1,0 @@
-train: /home/mpham/workspace/ucc-ai-quest-2023/data/yolov8/train
-val: /home/mpham/workspace/ucc-ai-quest-2023/data/yolov8/valid
-
-names: ['high_vegetation']
