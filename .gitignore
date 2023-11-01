@@ -1,0 +1,7 @@
+*ipynb_checkpoints*
+*/__pycache__/
+.cache/
+.cache
+*.egg-info/
+*.pyc
+*.vscode*
