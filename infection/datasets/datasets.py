@@ -1,7 +1,8 @@
 import os
+import random
 import numpy as np
 import lightning.pytorch as pl
-from augmentations import get_augmentations
+from infection.augmentations import get_augmentations
 from pathlib import Path
 from PIL import Image
 from torch.utils.data import Dataset, DataLoader
@@ -18,8 +19,29 @@ class SegDataset(Dataset):
     def __len__(self):
         return len(self.img_list)
 
+
+    def load_mosaic(self, index:int):
+        indexes = [index] + [random.randint(0, len(self.fns) - 1) for _ in range(3)]
+        images_list = []
+        masks_list = []
+
+        for index in indexes:
+            img_path, label_path = self.fns[index]
+            img = Image.open(img_path).convert('RGB')
+            img = np.array(img)
+            mask = self._load_mask(label_path)
+            images_list.append(img)
+            masks_list.append(mask)
+
+        result_image, result_mask = self.mosaic(
+            images_list, 
+            masks_list)
+            
+        return result_image, result_mask
+    
     def __getitem__(self, idx):
         img = np.array(Image.open(self.img_dir / self.img_list[idx]))
+        ori_size = img.shape[:2]
         ann_path = self.ann_dir / f"{Path(self.img_list[idx]).stem}.png"
         ann = np.array(Image.open(ann_path))
 
@@ -28,7 +50,7 @@ class SegDataset(Dataset):
             img = augmented["image"]
             ann = augmented["mask"]
 
-        return img, ann
+        return img, ann, ori_size
 
 
 class SegDataModule(pl.LightningDataModule):
@@ -53,7 +75,7 @@ class SegDataModule(pl.LightningDataModule):
         )
 
     def train_dataloader(self):
-        return DataLoader(self.train, batch_size=self.batch_size, shuffle=True)
+        return DataLoader(self.train, batch_size=self.batch_size, shuffle=True, drop_last=True)
 
     def val_dataloader(self):
         return DataLoader(self.valid, batch_size=1, shuffle=False)
@@ -64,5 +86,5 @@ class SegDataModule(pl.LightningDataModule):
 
 if __name__ == "__main__":
     ds = SegDataset()
-    img, ann = ds[10]
+    img, ann, _ = ds[10]
     print("Done!")

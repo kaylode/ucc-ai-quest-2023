@@ -1,0 +1,1 @@
+from infection.metrics.metrics import SMAPIoUMetric

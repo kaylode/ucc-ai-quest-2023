@@ -1,0 +1,22 @@
+hydra:
+  run:
+    dir: ./runs/hydra/${now:%Y-%m-%d-%H-%M-%S}
+trainer:
+  max_epochs: 30
+  log_every_n_steps: 10
+  save_dir: ./runs
+loss:
+  loss_name: cross_entropy
+  label_smoothing: 0.1
+optimizer:
+  lr: 0.001
+augmentations:
+  train: null
+  val: null
+data:
+  root_dir: /home/mpham/workspace/ucc-ai-quest-2023/data
+  phase: warmup
+  batch_size: 32
+model:
+  model_name: fcn_r50_baseline
+   

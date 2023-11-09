@@ -1,1 +1,1 @@
-from .datasets import SegDataModule
+from .datasets import SegDataModule, SegDataset

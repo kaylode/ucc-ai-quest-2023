@@ -3,7 +3,8 @@ import torch.nn as nn
 import torchvision
 import segmentation_models_pytorch as smp
 import lightning.pytorch as pl
-from metrics import SMAPIoUMetric
+from infection.metrics import SMAPIoUMetric
+from infection.losses import get_loss
 
 
 class SegModel(pl.LightningModule):
@@ -38,26 +39,39 @@ class SegModel(pl.LightningModule):
                 classes=2,
             )
         
-        self.criterion = nn.CrossEntropyLoss(**loss_configs)
+        if self.loss_configs is not None:
+            self.criterion = get_loss(
+                self.loss_configs
+            )
         self.evaluator = SMAPIoUMetric()
+        self.save_hyperparameters()
 
     def forward(self, x):
         return self.net(x)
 
     def training_step(self, batch, batch_nb):
-        img, mask = batch
+        img, mask, _ = batch
         img = img.float()
         mask = mask.long()
-        out = self.forward(img)["out"]
+
+        out = self.forward(img)
+        
+        if isinstance(out, dict):
+            out = out["out"]
+
         loss = self.criterion(out, mask)
         self.log("loss", loss, prog_bar=True, sync_dist=True)
         return loss
 
     def validation_step(self, batch, batch_nb):
-        img, mask = batch
+        img, mask, _ = batch
         img = img.float()
         mask = mask.long()
-        out = self.forward(img)["out"]
+        out = self.forward(img)
+        
+        if isinstance(out, dict):
+            out = out["out"]
+        
         loss = self.criterion(out, mask)
 
         probs = torch.softmax(out, dim=1)
