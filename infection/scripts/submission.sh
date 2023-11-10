@@ -1,6 +1,6 @@
-MODEL_PATH=$1
+PREDICT_FOLDER=$1
 
-PYTHONPATH=. python infection/submission/prepare_results_for_submission.py \
-    -c $MODEL_PATH \
-    -d /home/mpham/workspace/ucc-ai-quest-2023/data \
-    -o /home/mpham/workspace/ucc-ai-quest-2023/submissions/
+PYTHONPATH=. python infection/tools/submission.py \
+    -i /home/mpham/workspace/ucc-ai-quest-2023/data/warmup/img/valid \
+    -p $PREDICT_FOLDER \
+    -o /home/mpham/workspace/ucc-ai-quest-2023/submissions/submission
