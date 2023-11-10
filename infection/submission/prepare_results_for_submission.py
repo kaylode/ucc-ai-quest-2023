@@ -13,6 +13,7 @@ import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument("--ckpt_path", '-c', type=str, required=True)
 parser.add_argument("--root_dir", '-d', type=str, default="data")
+parser.add_argument("--phase", '-p', type=str, default="warmup")
 parser.add_argument("--out_dir", '-o', type=str, default="results/")
 
 
@@ -22,7 +23,7 @@ def main(args):
     model = SegModel.load_from_checkpoint(args.ckpt_path)
     ds = SegDataset(
         root_dir=args.root_dir,
-        phase="warmup", 
+        phase=args.phase, 
         split="valid", 
         transform=get_augmentations("valid")
     )
@@ -48,6 +49,8 @@ def main(args):
             "height": resized_pred.shape[0],
             "width": resized_pred.shape[1],
         }
+
+    print("Total number of records: ", len(results))
     
     with open(osp.join(args.out_dir, "results.json"), "w") as f:
         json.dump(results, f)
