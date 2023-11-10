@@ -5,3 +5,6 @@
 *.egg-info/
 *.pyc
 *.vscode*
+runs/
+submissions/
+data/
