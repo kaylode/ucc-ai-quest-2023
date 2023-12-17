@@ -19,7 +19,6 @@ authors = [
   {name = "Minh-Khoi Pham", email = "minhkhoi.pham@adaptcentre.ie" },
   {name = "Nam H Trinh"},
   {name = "Van-Tu Ninh"},
-  {name = "Tai Tan Mai"},
   {name = "Khiem-Tu Le"},
 ]
 maintainers = [
@@ -41,6 +40,9 @@ dependencies = [
   "torch>=2.1.0",
   "torchvision>=0.16.0",
   "albumentations>=1.3.1",
+  "deepdiff>=6.7.1",
+  "wandb>=0.16.1",
+  "plotly>=5.18.0"
 ]
 
 [project.optional-dependencies]

@@ -5,6 +5,11 @@ trainer:
   max_epochs: 50
   log_every_n_steps: 10
   save_dir: ./runs
+# logger:
+#   wandb: 
+#     username:  kaylode
+#     project_name: ucc-ai-quest-2023
+#     group_name: public
 loss:
   loss_name: cross_entropy
   label_smoothing: 0.1
@@ -15,9 +20,9 @@ augmentations:
   val: null
 data:
   root_dir: /home/mpham/workspace/ucc-ai-quest-2023/data
-  phase: warmup
-  batch_size: 16
-  image_size: 512
+  phase: public
+  batch_size: 8
+  image_size: 640
 model:
   model_name: fcn_r50_baseline
    
