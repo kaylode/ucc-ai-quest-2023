@@ -54,34 +54,35 @@ class SegDataset(Dataset):
 
 
 class SegDataModule(pl.LightningDataModule):
-    def __init__(self, root_dir="data", phase="warmup", batch_size: int = 8):
+    def __init__(self, root_dir="data", phase="warmup", batch_size: int = 8, image_size:int=512):
         super().__init__()
         self.root_dir = root_dir
         self.phase = phase
         self.batch_size = batch_size
+        self.image_size = image_size
 
     def setup(self, stage: str):
         self.train = SegDataset(
             root_dir=self.root_dir,
             phase=self.phase,
             split="train",
-            transform=get_augmentations("train"),
+            transform=get_augmentations("train", image_size=self.image_size),
         )
         self.valid = SegDataset(
             root_dir=self.root_dir,
             phase=self.phase,
             split="valid",
-            transform=get_augmentations("valid")
+            transform=get_augmentations("valid", image_size=self.image_size)
         )
 
     def train_dataloader(self):
-        return DataLoader(self.train, batch_size=self.batch_size, shuffle=True, drop_last=True)
+        return DataLoader(self.train, batch_size=self.batch_size, shuffle=True, drop_last=True, num_workers=4)
 
     def val_dataloader(self):
-        return DataLoader(self.valid, batch_size=1, shuffle=False)
+        return DataLoader(self.valid, batch_size=1, shuffle=False, num_workers=4)
 
     def test_dataloader(self):
-        return DataLoader(self.valid, batch_size=1, shuffle=False)
+        return DataLoader(self.valid, batch_size=1, shuffle=False, num_workers=4)
 
 
 if __name__ == "__main__":

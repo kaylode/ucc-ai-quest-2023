@@ -1,10 +1,14 @@
 import os
 import os.path as osp
+import json
 import cv2
 import numpy as np
 from PIL import Image
 from infection.metrics import SMAPIoUMetric
+from infection.utilities.visualization import Visualizer
+
 import argparse
+
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--ann_dir", '-a', type=str, default="data")
@@ -12,6 +16,7 @@ parser.add_argument("--predict_dir", '-p', type=str, default="data")
 
 def main(args):
     evaluator = SMAPIoUMetric()
+    visualizer = Visualizer()
     
     filenames = sorted(os.listdir(args.ann_dir))
     for filename in filenames:
@@ -28,6 +33,15 @@ def main(args):
             stacked_pred, 
             tuple([mask.shape[1], mask.shape[0]])
         )[...,-1]
+
+
+        # img_show = visualizer.denormalize(inputs)
+        # decode_mask = visualizer.decode_segmap(mask.numpy())
+        # img_show = TFF.to_tensor(img_show)
+        # decode_mask = TFF.to_tensor(decode_mask / 255.0)
+        # img_show = torch.cat([img_show, decode_mask], dim=-1)
+        # batch.append(img_show)
+        # grid_img = visualizer.make_grid(batch)
 
         evaluator.process(input={"pred": resized_pred, "gt": mask})
 
