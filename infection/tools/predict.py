@@ -1,8 +1,6 @@
 import os
 import os.path as osp
 import numpy as np
-import cv2
-import json
 import torch
 from infection.augmentations import get_augmentations
 from infection.datasets import SegDataset
@@ -25,7 +23,7 @@ def main(args):
         root_dir=args.root_dir,
         phase="warmup", 
         split="valid", 
-        transform=get_augmentations("valid")
+        transform=get_augmentations("valid", image_size=512)
     )
     model.eval()
     for i, batch in enumerate(ds):

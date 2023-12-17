@@ -3,12 +3,13 @@ import albumentations as A
 from albumentations.pytorch import ToTensorV2
 from .mosaic import Mosaic
 
-def get_augmentations(split:str):
+def get_augmentations(split:str, image_size:int=512):
 
     train_augments = [
-        A.Resize(512, 512),
-        A.RandomCrop(384, 384),
+        A.Resize(int(image_size*1.25), int(image_size*1.25)),
+        A.RandomCrop(image_size, image_size),
         A.HorizontalFlip(),
+        A.VerticalFlip(),
         A.GaussianBlur(),
         A.HueSaturationValue(
             hue_shift_limit=0.2,
@@ -27,7 +28,7 @@ def get_augmentations(split:str):
     ]
 
     val_augments = [
-        A.Resize(384, 384),
+        A.Resize(image_size, image_size),
         A.Normalize(
             mean=[0.485, 0.456, 0.406],
             std=[0.229, 0.224, 0.225]
