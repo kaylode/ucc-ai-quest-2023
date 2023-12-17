@@ -1,8 +1,12 @@
 from typing import Dict, Any
 
 import matplotlib.patches as mpatches
+import matplotlib as mpl
+import plotly.graph_objs as go
 import matplotlib.pyplot as plt
 import numpy as np
+import os
+import os.path as osp
 import torch
 from torchvision.transforms import functional as TFF
 
@@ -11,7 +15,14 @@ from lightning.pytorch.callbacks import Callback
 from lightning.pytorch.utilities.types import STEP_OUTPUT
 from infection.utilities.visualization import Visualizer, color_list
 
-class SemanticVisualizerCallback(Callback):
+
+def write_image(value, savepath):
+    if isinstance(value, go.Figure):
+        value.write_image(savepath + ".png")
+    if isinstance(value, mpl.figure.Figure):
+        value.savefig(savepath)
+
+class VisualizerCallback(Callback):
     """
     Callbacks for visualizing stuff during training
     Features:
@@ -20,39 +31,33 @@ class SemanticVisualizerCallback(Callback):
 
     """
 
-    def __init__(self, **kwargs) -> None:
+    def __init__(self, save_dir:str, **kwargs) -> None:
         super().__init__()
 
+        self.save_dir = osp.join(save_dir, 'figures')
+        os.makedirs(self.save_dir, exist_ok=True)
         self.visualizer = Visualizer()
+        self.classnames = ['background', 'vegetation']
 
     def on_sanity_check_start(self, trainer: pl.Trainer, pl_module: pl.LightningModule):
         """
         Sanitycheck before starting. Run only when debug=True
         """
-
         iters = trainer.global_step
-        model = pl_module.model
-        valloader = pl_module.datamodule.valloader
-        trainloader = pl_module.datamodule.trainloader
+        trainloader = trainer.datamodule.train_dataloader()
+        valloader = trainer.datamodule.val_dataloader()
         train_batch = next(iter(trainloader))
         val_batch = next(iter(valloader))
-        valset = valloader.dataset
-        classnames = valset.classnames
 
-        try:
-            self.visualize_model(model, train_batch)
-        except:
-            LOGGER.text("Cannot log model architecture", level=LoggerObserver.ERROR)
-        self.visualize_gt(train_batch, val_batch, iters, classnames)
+        self.visualize_gt(train_batch, val_batch, iters, self.classnames)
 
     def visualize_gt(self, train_batch, val_batch, iters, classnames):
         """
         Visualize dataloader for sanity check
         """
 
-        LOGGER.text("Visualizing dataset...", level=LoggerObserver.DEBUG)
-        images = train_batch["inputs"]
-        masks = train_batch["targets"].squeeze()
+        images = train_batch[0]
+        masks = train_batch[1]
 
         batch = []
         for idx, (inputs, mask) in enumerate(zip(images, masks)):
@@ -83,20 +88,11 @@ class SemanticVisualizerCallback(Callback):
         )
         plt.tight_layout(pad=0)
 
-        LOGGER.log(
-            [
-                {
-                    "tag": "Sanitycheck/batch/train",
-                    "value": fig,
-                    "type": LoggerObserver.FIGURE,
-                    "kwargs": {"step": iters},
-                }
-            ]
-        )
+        write_image(fig, osp.join(self.save_dir, f"train_gt_{iters}"))
 
         # Validation
-        images = val_batch["inputs"]
-        masks = val_batch["targets"].squeeze()
+        images = val_batch[0]
+        masks = val_batch[1]
 
         batch = []
         for idx, (inputs, mask) in enumerate(zip(images, masks)):
@@ -121,16 +117,7 @@ class SemanticVisualizerCallback(Callback):
         )
         plt.tight_layout(pad=0)
 
-        LOGGER.log(
-            [
-                {
-                    "tag": "Sanitycheck/batch/val",
-                    "value": fig,
-                    "type": LoggerObserver.FIGURE,
-                    "kwargs": {"step": iters},
-                }
-            ]
-        )
+        write_image(fig, osp.join(self.save_dir, f"val_gt_{iters}"))
 
         plt.cla()  # Clear axis
         plt.clf()  # Clear figure
@@ -145,26 +132,28 @@ class SemanticVisualizerCallback(Callback):
         """
         After finish validation
         """
-
         iters = trainer.global_step
         last_batch = self.params['last_batch']
-        model = pl_module.model
-        valloader = pl_module.datamodule.valloader
+        model = pl_module.net
 
         # Vizualize model predictions
-        LOGGER.text("Visualizing model predictions...", level=LoggerObserver.DEBUG)
-
         model.eval()
 
-        images = last_batch["inputs"]
-        masks = last_batch["targets"].squeeze()
-
-        preds = model.model.get_prediction({"inputs": images}, model.device)["masks"]
+        images = last_batch[0]
+        masks = last_batch[1]
+        preds = []
+        for img in images:
+            out = model(img.float().unsqueeze(dim=0))
+            if isinstance(out, dict):
+                out = out["out"]
+            pred = torch.argmax(out, dim=1)
+            pred = pred.detach().cpu().numpy().squeeze()
+            preds.append(pred)
 
         batch = []
         for idx, (inputs, mask, pred) in enumerate(zip(images, masks, preds)):
-            img_show = self.visualizer.denormalize(inputs)
-            decode_mask = self.visualizer.decode_segmap(mask.numpy())
+            img_show = self.visualizer.denormalize(inputs.cpu())
+            decode_mask = self.visualizer.decode_segmap(mask.cpu().numpy())
             decode_pred = self.visualizer.decode_segmap(pred)
             img_cam = TFF.to_tensor(img_show)
             decode_mask = TFF.to_tensor(decode_mask / 255.0)
@@ -179,10 +168,9 @@ class SemanticVisualizerCallback(Callback):
         plt.imshow(grid_img)
 
         # segmentation color legends
-        classnames = valloader.dataset.classnames
         patches = [
-            mpatches.Patch(color=np.array(color_list[i][::-1]), label=classnames[i])
-            for i in range(len(classnames))
+            mpatches.Patch(color=np.array(color_list[i][::-1]), label=self.classnames[i])
+            for i in range(len(self.classnames))
         ]
         plt.legend(
             handles=patches,
@@ -190,20 +178,11 @@ class SemanticVisualizerCallback(Callback):
             loc="upper right",
             borderaxespad=0.0,
             fontsize="large",
-            ncol=(len(classnames) // 10) + 1,
+            ncol=(len(self.classnames) // 10) + 1,
         )
         plt.tight_layout(pad=0)
 
-        LOGGER.log(
-            [
-                {
-                    "tag": "Validation/prediction",
-                    "value": fig,
-                    "type": LoggerObserver.FIGURE,
-                    "kwargs": {"step": iters},
-                }
-            ]
-        )
+        write_image(fig, osp.join(self.save_dir, f"pred_{iters}"))
 
         plt.cla()  # Clear axis
         plt.clf()  # Clear figure

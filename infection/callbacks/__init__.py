@@ -1,2 +1,2 @@
 from .wandb_callback import WandbCallback
-from .visualize_callbacks import SemanticVisualizerCallback
+from .visualizer_callback import VisualizerCallback
