@@ -17,7 +17,8 @@ def main(args: DictConfig):
     datamodule = SegDataModule(
         root_dir=args.data.root_dir,
         batch_size=args.data.batch_size,
-        image_size=args.data.image_size
+        image_size=args.data.image_size,
+        use_mosaic=args.data.use_mosaic,
     )
 
     model = SegModel(

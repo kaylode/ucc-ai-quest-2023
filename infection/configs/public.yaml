@@ -23,6 +23,7 @@ data:
   phase: public
   batch_size: 8
   image_size: 640
+  use_mosaic: 0.3
 model:
   model_name: fcn_r50_baseline
    
