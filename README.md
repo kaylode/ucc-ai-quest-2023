@@ -1,8 +1,24 @@
-# UCC AI Quest 2023
+# UCC AI Quest 2023 - Infection Team
 
-https://challenges.ai/ucc-ai-quest-2023
-https://github.com/ReML-AI/ucc-ai-quest-baseline
+Official links:
+- Competition information: https://challenges.ai/ucc-ai-quest-2023
+- This repo is built based on the provided baseline code: https://github.com/ReML-AI/ucc-ai-quest-baseline
 
+## Data
+
+- Warmup: https://drive.google.com/file/d/1OqHUM5z5AMmXQxE-R0zzPeePRDGZY1uB
+- Public set: https://drive.google.com/file/d/1rkecNZKd-dQFbXalUCRMyQkrMmL_xwPN
+
+Unzip warmup.zip/public.zip in data folder so it has the following structure
+
+```
+data/$PHASE/img/train
+data/$PHASE/img/valid
+data/$PHASE/img/test
+data/$PHASE/ann/train
+data/$PHASE/ann/valid
+```
+where $PHASE could be warmup/public
 
 ## Install dependencies
 ```
@@ -13,41 +29,30 @@ cd ucc-ai-quest-2023
 pip install -e .
 ```
 
-## Unzip warmup.zip in data folder so it has the following structure
+## Execution scripts
 
-```
-data/warmup/img/train
-data/warmup/img/valid
-data/warmup/ann/train
-data/warmup/ann/valid
-```
+Firtly, configuration can be adjusted inside `infection/configs` folder depending to the $PHASE
 
-## Training
+To train models, run the below script
 ```
-python train.py
+sh infection/scripts/train.sh $PHASE $MODEL_NAME
 ```
+where $MODEL_NAME follows this format: $ARCHITECTURE.$BACKBONE (for example, deeplabv3plus.timm-efficientnet-b4) or other models could be implemented and specified accordingly. Run experiments will be stored in `runs/$PHASE/$MODEL_NAME`.
 
-## Prepare results for submission
+Training pipeline can be seen in [infection/tools/train.py](./infection/tools/train.py)
 
-After training, the checkpoints are stored in folder `checkpoints`. We need to prepare a file named "results.json" for submission on CodaLab. Use the script `prepare_results_for_submission.py` and replace the checkpoint path 
 
+For evaluation and submission, prediction script should be run first
 ```
-model = SegModel.load_from_checkpoint("checkpoints/epoch=6-val_loss=0.47-val_high_vegetation_IoU=63.55-val_mIoU=66.48.ckpt")
+sh infection/scripts/predict.sh $PHASE $MODEL_NAME
 ```
-and the phase (warmup/public/private) and the split accordingly
-```
-ds = SegDataset(phase="warmup", split="valid", transform=ToTensorV2())
-```
+then the prediction will be saved into $PREDICTION_FOLDER=`submissions/prediction/$PHASE/$MODEL_NAME`
 
-then run`
+then the submission script can be run
 ```
-python prepare_results_for_submission.py
+sh infection/scripts/submission.sh $PHASE $PREDICTION_FOLDER
 ```
+this will result in a json file for submission in `submissions/submission` folder. **Remember to zip it before submission**
 
-there should be a file "results.json" generated in the current directory. Zip the file
-
-```
-zip results.zip results.json
-```
-
-Done! You should be able to submit the file `results.zip` now, good luck!
+> [!TIP]
+> Ensemble method can be run using `scripts/ensemble.sh`. It will gather results from all the npy files generated from `scripts/predict.sh` and combine into a new folder. Then `scripts/submission.sh` can be run to generate submission file from this folder.
