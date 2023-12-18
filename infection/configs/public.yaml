@@ -19,11 +19,13 @@ augmentations:
   train: null
   val: null
 data:
-  root_dir: /home/mpham/workspace/ucc-ai-quest-2023/data
-  phase: public
+  train_img_dir: data/public/img/train
+  train_ann_dir: data/public/ann/train
+  val_img_dir: data/public/img/val
+  val_ann_dir: data/public/ann/val
   batch_size: 8
   image_size: 640
-  use_mosaic: 0.3
+  use_mosaic: 0
 model:
   model_name: fcn_r50_baseline
    

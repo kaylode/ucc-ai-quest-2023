@@ -1,6 +1,7 @@
-PREDICT_FOLDER=$1
+PHASE=$1
+PREDICT_FOLDER=$2
 
 PYTHONPATH=. python infection/tools/submission.py \
-    -i /home/mpham/workspace/ucc-ai-quest-2023/data/warmup/img/valid \
+    -i data/$PHASE/img/test \
     -p $PREDICT_FOLDER \
-    -o /home/mpham/workspace/ucc-ai-quest-2023/submissions/submission
+    -o submissions/submission

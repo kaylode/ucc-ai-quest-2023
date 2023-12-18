@@ -1,5 +1,6 @@
-PREDICT_FOLDER=$1
+PHASE=$1
+PREDICT_FOLDER=$2
 
 PYTHONPATH=. python infection/tools/eval.py \
-    -a /home/mpham/workspace/ucc-ai-quest-2023/data/warmup/ann/valid \
+    -a data/$PHASE/ann/valid \
     -p $PREDICT_FOLDER
