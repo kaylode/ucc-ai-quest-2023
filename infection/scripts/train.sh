@@ -10,3 +10,14 @@ PYTHONPATH=. python infection/tools/train.py \
     data.train_ann_dir=data/$PHASE/ann/train \
     data.val_img_dir=data/$PHASE/img/valid \
     data.val_ann_dir=data/$PHASE/ann/valid
+
+PYTHONPATH=. python infection/tools/predict.py \
+    --return_probs \
+    -c runs/$PHASE/$MODEL_NAME/checkpoints/best.ckpt \
+    -cfg runs/$PHASE/$MODEL_NAME/pipeline.yaml \
+    -d data/$PHASE/img/valid \
+    -o submissions/validation/$PHASE/$MODEL_NAME
+
+PYTHONPATH=. python infection/tools/eval.py \
+    -a data/$PHASE/ann/valid \
+    -p submissions/validation/$PHASE/$MODEL_NAME

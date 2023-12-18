@@ -57,5 +57,9 @@ sh infection/scripts/submission.sh $PHASE $PREDICTION_FOLDER
 ```
 this will result in a json file for submission in `submissions/submission` folder. **Remember to zip it before submission**
 
+> [!WARNING]
+> Before submission, please rename the json file to `results.json` and zip it as `results.zip`
+
+
 > [!TIP]
 > Ensemble method can be run using `scripts/ensemble.sh`. It will gather results from all the npy files generated from `scripts/predict.sh` and combine into a new folder. Then `scripts/submission.sh` can be run to generate submission file from this folder.
