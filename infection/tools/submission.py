@@ -28,7 +28,7 @@ def main(args):
             print(f"{predict_path} does not exists")
             continue
         
-        image = Image.open(osp.join(args.image_dir, prefilename+'.JPG'))
+        image = Image.open(osp.join(args.image_dir, filename))
         pred = np.load(predict_path)
         pred = (pred > 0.5).astype(np.uint8)
         stacked_pred = np.repeat(pred[:, :, np.newaxis], 3, axis=2) # h,w,c
