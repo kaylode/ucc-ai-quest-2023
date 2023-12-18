@@ -15,7 +15,10 @@ seed_everything(2023)
 def main(args: DictConfig):
 
     datamodule = SegDataModule(
-        root_dir=args.data.root_dir,
+        train_img_dir=args.data.train_img_dir,
+        train_ann_dir=args.data.train_ann_dir,
+        val_img_dir=args.data.val_img_dir,
+        val_ann_dir=args.data.val_ann_dir,
         batch_size=args.data.batch_size,
         image_size=args.data.image_size,
         use_mosaic=args.data.use_mosaic,
@@ -31,8 +34,9 @@ def main(args: DictConfig):
         dirpath=osp.join(args.trainer.save_dir, 'checkpoints'),
         monitor="val_high_vegetation_IoU",
         mode="max",
-        filename="{epoch}-{val_loss:.2f}-{val_high_vegetation_IoU:.2f}-{val_mIoU:.2f}",
-        save_top_k=3,
+        filename="best",
+        save_top_k=1,
+        save_last=True
     )
 
     # os.makedirs(args.trainer.save_dir, exist_ok=True)

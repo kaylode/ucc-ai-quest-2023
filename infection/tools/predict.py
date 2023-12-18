@@ -6,10 +6,13 @@ from infection.augmentations import get_augmentations
 from infection.datasets import SegDataset
 from infection.models import SegModel
 import argparse
+import yaml
+from tqdm import tqdm
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--ckpt_path", '-c', type=str, required=True)
-parser.add_argument("--root_dir", '-d', type=str, default="data")
+parser.add_argument("--config-file", '-cfg', type=str, required=True)
+parser.add_argument("--img_dir", '-d', type=str, default="data")
 parser.add_argument("--out_dir", '-o', type=str, default="results/")
 parser.add_argument("--return_probs", action='store_true', default=False)
 
@@ -17,16 +20,15 @@ parser.add_argument("--return_probs", action='store_true', default=False)
 
 def main(args):
     os.makedirs(args.out_dir, exist_ok=True)
-    
+
+    config = yaml.load(open(args.config_file, 'r'), Loader=yaml.FullLoader)
     model = SegModel.load_from_checkpoint(args.ckpt_path)
     ds = SegDataset(
-        root_dir=args.root_dir,
-        phase="warmup", 
-        split="valid", 
-        transform=get_augmentations("valid", image_size=512)
+        img_dir=args.img_dir,
+        transform=get_augmentations("valid", image_size=config['data'].get('image_size', 512))
     )
     model.eval()
-    for i, batch in enumerate(ds):
+    for i, batch in tqdm(enumerate(ds)):
         filename = osp.splitext(ds.img_list[i])[0]
         img, _, ori_size = batch
 

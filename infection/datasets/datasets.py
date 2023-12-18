@@ -8,10 +8,9 @@ from PIL import Image
 from torch.utils.data import Dataset, DataLoader
 
 class SegDataset(Dataset):
-    def __init__(self, root_dir="data", phase="warmup", split="train", image_size:int=512, use_mosaic:float=0, transform=None):
-        self.root_dir = Path(root_dir)
-        self.img_dir = self.root_dir / phase / "img" / split
-        self.ann_dir = self.root_dir / phase / "ann" / split
+    def __init__(self, img_dir, ann_dir=None, image_size:int=512, use_mosaic:float=0, transform=None):
+        self.img_dir = Path(img_dir)
+        self.ann_dir = Path(ann_dir) if ann_dir else None
         self.transform = transform
         self.img_list = os.listdir(self.img_dir)
         self.use_mosaic = use_mosaic
@@ -30,9 +29,8 @@ class SegDataset(Dataset):
 
         for index in indexes:
             img = np.array(Image.open(self.img_dir / self.img_list[index]))
-            ann_path = self.ann_dir / f"{Path(self.img_list[index]).stem}.png"
-            ann = np.array(Image.open(ann_path))
             images_list.append(img)
+            ann = np.array(Image.open(self.ann_dir / f"{Path(self.img_list[index]).stem}.png"))
             masks_list.append(ann)
 
         result_image, result_mask = self.mosaic(
@@ -56,9 +54,10 @@ class SegDataset(Dataset):
         
         img = np.array(Image.open(self.img_dir / self.img_list[idx]))
         ori_size = img.shape[:2]
-        ann_path = self.ann_dir / f"{Path(self.img_list[idx]).stem}.png"
-        ann = np.array(Image.open(ann_path))
-
+        if self.ann_dir:
+            ann = np.array(Image.open(self.ann_dir / f"{Path(self.img_list[idx]).stem}.png"))
+        else:
+            ann = np.zeros_like(img)
         if self.transform:
             augmented = self.transform(image=img, mask=ann)
             img = augmented["image"]
@@ -68,27 +67,33 @@ class SegDataset(Dataset):
 
 
 class SegDataModule(pl.LightningDataModule):
-    def __init__(self, root_dir="data", phase="warmup", batch_size: int = 8, image_size:int=512, use_mosaic:float=0):
+    def __init__(
+            self, 
+            train_img_dir, train_ann_dir, 
+            val_img_dir, val_ann_dir, 
+            batch_size: int = 8, image_size:int=512, use_mosaic:float=0
+        ):
         super().__init__()
-        self.root_dir = root_dir
-        self.phase = phase
+        self.train_img_dir = train_img_dir
+        self.train_ann_dir = train_ann_dir
+        self.val_img_dir = val_img_dir
+        self.val_ann_dir = val_ann_dir
         self.batch_size = batch_size
         self.image_size = image_size
         self.use_mosaic = use_mosaic
 
     def setup(self, stage: str):
         self.train = SegDataset(
-            root_dir=self.root_dir,
-            phase=self.phase,
-            split="train",
+            img_dir=self.train_img_dir,
+            ann_dir=self.train_ann_dir,
             use_mosaic=self.use_mosaic,
             image_size=self.image_size,
             transform=get_augmentations("train", image_size=self.image_size),
         )
         self.valid = SegDataset(
-            root_dir=self.root_dir,
-            phase=self.phase,
-            split="valid",
+            img_dir=self.val_img_dir,
+            ann_dir=self.val_ann_dir,
+            use_mosaic=0,
             image_size=self.image_size,
             transform=get_augmentations("valid", image_size=self.image_size)
         )
