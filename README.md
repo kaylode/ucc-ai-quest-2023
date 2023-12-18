@@ -1,5 +1,8 @@
 # UCC AI Quest 2023 - Infection Team
 
+[![Notebook](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1OiTAt0y2GJjcXsYt1zs98PbiTlgV3LEn?usp=sharing)
+
+
 Official links:
 - Competition information: https://challenges.ai/ucc-ai-quest-2023
 - This repo is built based on the provided baseline code: https://github.com/ReML-AI/ucc-ai-quest-baseline
