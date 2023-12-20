@@ -1,4 +1,5 @@
-train: /home/mpham/workspace/ucc-ai-quest-2023/data/yolov8/train
-val: /home/mpham/workspace/ucc-ai-quest-2023/data/yolov8/valid
+path: data/yolov8/public
+train: train
+val: valid
 
 names: ['high_vegetation']
