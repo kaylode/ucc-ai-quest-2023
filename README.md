@@ -7,6 +7,23 @@ Official links:
 - Competition information: https://challenges.ai/ucc-ai-quest-2023
 - This repo is built based on the provided baseline code: https://github.com/ReML-AI/ucc-ai-quest-baseline
 
+## Suggestion for improvements
+
+- Augmentations:
+  - [x] [Mosaic Augmentation](https://medium.com/mlearning-ai/yolox-explanation-mosaic-and-mixup-for-data-augmentation-3839465a3adf)
+- Loss functions:
+  - [x] Dice loss
+  - [x] Focal Tversky loss
+  - [x] Lovasz-Softmax loss
+  - [x] [Online Hard Example Mining (OHEM)](https://paperswithcode.com/method/ohem)
+- Models:
+  - [ ] Transformers-based models: [OneFormer](https://github.com/NielsRogge/Transformers-Tutorials/blob/master/OneFormer/Fine_tune_OneFormer_for_semantic_segmentation.ipynb), [SegFormer](https://github.com/NielsRogge/Transformers-Tutorials/tree/master/SegFormer), [MaskFormer and Mask2Former](https://github.com/NielsRogge/Transformers-Tutorials/tree/master/Mask2Former), [DinoV2](https://github.com/NielsRogge/Transformers-Tutorials/blob/master/DINOv2/Train_a_linear_classifier_on_top_of_DINOv2_for_semantic_segmentation.ipynb),...
+  - [ ] [YOLOv8](https://github.com/ultralytics/ultralytics)
+- Postprocessing:
+  - [x] Ensemble 
+    
+
+
 ## Data
 
 - Warmup: https://drive.google.com/file/d/1OqHUM5z5AMmXQxE-R0zzPeePRDGZY1uB
