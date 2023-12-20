@@ -22,7 +22,8 @@ Official links:
 - Postprocessing:
   - [x] Ensemble 
     
-
+- Tips and tricks:
+  - [Tips and tricks from Kaggle competitions](https://neptune.ai/blog/image-segmentation-tips-and-tricks-from-kaggle-competitions)
 
 ## Data
 
