@@ -9,9 +9,13 @@ class FocalTverskyLoss(nn.Module):
         self.beta = 1-alpha
         self.gamma = gamma
 
-    def forward(self, predict, batch, device):
-        targets = batch["targets"].to(device)
-        prediction = F.softmax(predict, dim=1)  
+    def forward(self, logits, targets):
+        prediction = F.softmax(logits, dim=1)  
+        if len(targets.shape) == 3:
+            num_classes = prediction.shape[1]
+            targets = F.one_hot(
+                targets.long(), num_classes=num_classes
+            ).permute(0, 3, 1, 2)
         
         #flatten label and prediction tensors
         prediction = prediction.contiguous().view(-1)

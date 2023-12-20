@@ -12,9 +12,14 @@ class DiceLoss(nn.Module):
         super(DiceLoss, self).__init__()
         self.eps = eps
 
-    def forward(self, predict, batch, device):
-        targets = batch["targets"].to(device)
-        prediction = F.softmax(predict, dim=1)  
+    def forward(self, logits, targets):
+        prediction = F.softmax(logits, dim=1)  
+
+        if len(targets.shape) == 3:
+            num_classes = prediction.shape[1]
+            targets = F.one_hot(
+                targets.long(), num_classes=num_classes
+            ).permute(0, 3, 1, 2)
 
         # have to use contiguous since they may from a torch.view op
         iflat = prediction.contiguous().view(-1)
