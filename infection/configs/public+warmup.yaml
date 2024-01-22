@@ -1,0 +1,31 @@
+hydra:
+  run:
+    dir: ./runs/hydra/${now:%Y-%m-%d-%H-%M-%S}
+trainer:
+  max_epochs: 50
+  log_every_n_steps: 10
+  save_dir: ./runs
+# logger:
+#   wandb: 
+#     username:  kaylode
+#     project_name: ucc-ai-quest-2023
+#     group_name: public
+loss: 
+  - name: ohem_cross_entropy
+    args:
+      thresh: 0.7
+  - name: dice
+
+optimizer:
+  lr: 0.0001
+data:
+  train_img_dir: data/public+warmup/img/train
+  train_ann_dir: data/public+warmup/ann/train
+  val_img_dir: data/public+warmup/img/val
+  val_ann_dir: data/public+warmup/ann/val
+  batch_size: 8
+  image_size: 640
+  use_mosaic: 0.2
+model:
+  model_name: fcn_r50_baseline
+   
