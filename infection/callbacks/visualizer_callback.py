@@ -134,7 +134,7 @@ class VisualizerCallback(Callback):
         """
         iters = trainer.global_step
         last_batch = self.params['last_batch']
-        model = pl_module.net
+        model = pl_module
 
         # Vizualize model predictions
         model.eval()
@@ -143,18 +143,33 @@ class VisualizerCallback(Callback):
         masks = last_batch[1]
         preds = []
         for img in images:
-            out = model(img.float().unsqueeze(dim=0))
-            if isinstance(out, dict):
-                out = out["out"]
-            pred = torch.argmax(out, dim=1)
-            pred = pred.detach().cpu().numpy().squeeze()
+            out = model.forward_logits(img.float().unsqueeze(dim=0))
+
+            # check if out is a type long tensor
+            if len(out.shape) == 4:
+                pred = torch.argmax(out, dim=1)
+            else:
+                if isinstance(out, torch.LongTensor):
+                    pred = out
+                else:
+                    pred = torch.sigmoid(out)
+                    pred = pred > 0.5
+                    pred = pred.long()
+            pred = pred.detach().squeeze()
             preds.append(pred)
 
         batch = []
         for idx, (inputs, mask, pred) in enumerate(zip(images, masks, preds)):
+            
+            if pred.shape < mask.shape:
+                pred = torch.nn.functional.interpolate(
+                    pred.unsqueeze(dim=0).unsqueeze(dim=0).float(), 
+                    size=mask.shape
+                ).squeeze().long()
+
             img_show = self.visualizer.denormalize(inputs.cpu())
             decode_mask = self.visualizer.decode_segmap(mask.cpu().numpy())
-            decode_pred = self.visualizer.decode_segmap(pred)
+            decode_pred = self.visualizer.decode_segmap(pred.cpu().numpy())
             img_cam = TFF.to_tensor(img_show)
             decode_mask = TFF.to_tensor(decode_mask / 255.0)
             decode_pred = TFF.to_tensor(decode_pred / 255.0)

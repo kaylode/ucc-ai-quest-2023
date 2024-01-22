@@ -105,10 +105,4 @@ class SegDataModule(pl.LightningDataModule):
         return DataLoader(self.valid, batch_size=self.batch_size, shuffle=False, num_workers=4)
 
     def test_dataloader(self):
-        return DataLoader(self.valid, batch_size=1, shuffle=False, num_workers=4)
-
-
-if __name__ == "__main__":
-    ds = SegDataset()
-    img, ann, _ = ds[10]
-    print("Done!")
+        return DataLoader(self.valid, batch_size=self.batch_size, shuffle=False, num_workers=4)
