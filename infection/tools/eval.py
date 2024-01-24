@@ -28,12 +28,6 @@ def main(args):
         pred = np.array(np.load(predict_path))
 
         pred = (pred > 0.5).astype(np.uint8)
-        stacked_pred = np.repeat(pred[:, :, np.newaxis], 3, axis=2) # h,w,c
-        resized_pred = cv2.resize(
-            stacked_pred, 
-            tuple([mask.shape[1], mask.shape[0]])
-        )[...,-1]
-
 
         # img_show = visualizer.denormalize(inputs)
         # decode_mask = visualizer.decode_segmap(mask.numpy())
@@ -42,8 +36,11 @@ def main(args):
         # img_show = torch.cat([img_show, decode_mask], dim=-1)
         # batch.append(img_show)
         # grid_img = visualizer.make_grid(batch)
-
-        evaluator.process(input={"pred": resized_pred, "gt": mask})
+        try:
+            evaluator.process(input={"pred": pred, "gt": mask})
+        except:
+            print(pred.shape, mask.shape)
+            import pdb; pdb.set_trace()
 
     print("Number of samples:", len(filenames))
 
