@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 import torchvision
 import segmentation_models_pytorch as smp
 import lightning.pytorch as pl
@@ -13,7 +14,7 @@ from transformers import (
 from transformers.modeling_outputs import SemanticSegmenterOutput
 from transformers.models.maskformer.modeling_maskformer import MaskFormerForInstanceSegmentationOutput
 from transformers import MaskFormerImageProcessor
-
+from .dinov2 import Dinov2ForSemanticSegmentation
 
 class SegModel(pl.LightningModule):
     def __init__(
@@ -61,6 +62,12 @@ class SegModel(pl.LightningModule):
                 do_normalize=False
             )
 
+        elif model_name == 'dinov2':
+            self.net = Dinov2ForSemanticSegmentation.from_pretrained(
+                "facebook/dinov2-base", 
+                id2label=id2label, 
+                num_labels=len(id2label)
+            )
         else:
             # example: model_name = "unetplusplus.tf_efficientnetv2_b0"
             #  model names from Unet, UnetPlusPlus, MAnet, Linknet, FPN, PSPNet, DeepLabV3, DeepLabV3Plus, PAN,
@@ -92,7 +99,7 @@ class SegModel(pl.LightningModule):
         if isinstance(out, SemanticSegmenterOutput):
             logits = out.logits
             with torch.no_grad():
-                out = nn.functional.interpolate(logits, size=x.shape[-2:], mode="bilinear", align_corners=False)
+                out = F.interpolate(logits, size=x.shape[-2:], mode="bilinear", align_corners=False)
         elif isinstance(out, MaskFormerForInstanceSegmentationOutput):
             out = self.processor.post_process_semantic_segmentation(
                 out
@@ -115,11 +122,11 @@ class SegModel(pl.LightningModule):
             )
             loss, logits = outputs.loss, outputs.logits
             with torch.no_grad():
-                out = nn.functional.interpolate(logits, size=mask.shape[-2:], mode="bilinear", align_corners=False)
+                out = F.interpolate(logits, size=mask.shape[-2:], mode="bilinear", align_corners=False)
             loss_dict = {"T": loss.item()}
         elif self.model_name == 'maskformer':
             # one hot encoding mask
-            onehot_mask = torch.nn.functional.one_hot(mask, num_classes=2).permute(0, 3, 1, 2).float()
+            onehot_mask = F.one_hot(mask, num_classes=2).permute(0, 3, 1, 2).float()
             class_labels=torch.Tensor([0, 1]).unsqueeze(0).repeat(img.shape[0], 1).long().cuda()
             outputs = self.net(
                 img,
@@ -128,6 +135,11 @@ class SegModel(pl.LightningModule):
             )
             loss, out = outputs.loss, outputs
             loss_dict = {"T": loss.item()}
+        elif self.model_name == 'dinov2':
+            out = self.net(
+                pixel_values=img, 
+            )
+            loss, loss_dict = self.criterion(out, mask)
         else:
             out = self.forward(img)
             loss, loss_dict = self.criterion(out, mask)
