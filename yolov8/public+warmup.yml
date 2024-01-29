@@ -1,4 +1,4 @@
-path: data/yolov8/public
+path: yolov8/public+warmup
 train: train
 val: valid
 
