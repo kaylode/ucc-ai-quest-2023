@@ -26,13 +26,13 @@ def get_augmentations(split:str, image_size:int=512, stats:str='imagenet'):
         A.VerticalFlip(),
         A.GaussianBlur(),
         A.HueSaturationValue(
-            hue_shift_limit=0.2,
-            sat_shift_limit=0.2,
-            val_shift_limit=0.2
+            hue_shift_limit=0.1,
+            sat_shift_limit=0.1,
+            val_shift_limit=0.1
         ),
         A.RandomBrightnessContrast(
-            brightness_limit=0.3,
-            contrast_limit=0.3
+            brightness_limit=0.2,
+            contrast_limit=0.2
         ),
         A.Normalize(
             mean=mean,
