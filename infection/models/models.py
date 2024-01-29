@@ -1,5 +1,4 @@
 import torch
-import torch.nn as nn
 import torch.nn.functional as F
 import torchvision
 import segmentation_models_pytorch as smp
@@ -17,9 +16,6 @@ from transformers.modeling_outputs import SemanticSegmenterOutput
 from transformers.models.maskformer.modeling_maskformer import MaskFormerForInstanceSegmentationOutput
 from transformers.models.mask2former.modeling_mask2former import Mask2FormerForUniversalSegmentationOutput
 from .dinov2 import Dinov2ForSemanticSegmentation
-
-from transformers import AutoProcessor, AutoModelForUniversalSegmentation
-
 
 class SegModel(pl.LightningModule):
     def __init__(
@@ -87,9 +83,9 @@ class SegModel(pl.LightningModule):
             else:
                 self.processor = postprocessor
 
-        elif model_name == 'dinov2':
+        elif model_name.startswith('dinov2'):
             self.net = Dinov2ForSemanticSegmentation.from_pretrained(
-                "facebook/dinov2-base", 
+                f"facebook/{model_name}", 
                 id2label=id2label, 
                 num_labels=len(id2label),
             )
@@ -109,17 +105,24 @@ class SegModel(pl.LightningModule):
                 classes=2,
             )
 
-            # freeze backbone except segmentation head
-            for name, parameter in self.net.named_parameters():
-                if "segmentation_head" not in name:
-                    parameter.requires_grad_(True)
-        
         if self.loss_configs is not None:
             self.criterion = get_loss(
                 self.loss_configs
             )
         self.evaluator = SMAPIoUMetric()
         self.save_hyperparameters()
+
+    def freeze_backbone(self):
+        if self.model_name.startswith('dinov2'):
+            self.net.freeze()
+        else:
+            for pname, param in self.net.named_parameters():
+                if not pname.startswith("segmentation_head"):
+                    param.requires_grad = False
+
+    def unfreeze(self):
+        for param in self.parameters():
+            param.requires_grad = True
 
     def forward(self, x):
         return self.net(x)
@@ -163,7 +166,7 @@ class SegModel(pl.LightningModule):
             )
             loss, out = outputs.loss, outputs
             loss_dict = {"T": loss.item()}
-        elif self.model_name == 'dinov2':
+        elif self.model_name.startswith('dinov2'):
             out = self.net(
                 pixel_values=batch[0], 
             )
