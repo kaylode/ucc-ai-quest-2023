@@ -1,5 +1,6 @@
 import os
 import os.path as osp
+import torch
 import lightning.pytorch as pl
 from lightning.pytorch.callbacks import ModelCheckpoint
 from infection.datasets import SegDataModule, TransformersDataModule
@@ -40,11 +41,17 @@ def main(args: DictConfig):
         model_name=args.model.model_name,
         loss_configs=args.loss,
         optimizer_configs=args.optimizer,
-        # postprocessor=datamodule.processor
     )
 
     if args.model.get('pretrained', None) is not None:
-        model = SegModel.load_from_checkpoint(args.model.pretrained)
+        checkpoint = torch.load(args.model.pretrained)
+        model.load_state_dict(checkpoint['state_dict'])
+
+    if args.model.get('freeze_backbone', False):
+        model.freeze_backbone()
+        print("Freeze backbone")
+    else:
+        model.unfreeze()
 
     checkpoint_callback = ModelCheckpoint(
         dirpath=osp.join(args.trainer.save_dir, 'checkpoints'),
