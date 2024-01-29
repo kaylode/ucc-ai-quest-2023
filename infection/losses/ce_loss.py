@@ -5,12 +5,13 @@ from torch import nn
 class CELoss(nn.Module):
     r"""CELoss is warper of cross-entropy loss"""
 
-    def __init__(self, label_smoothing:float=0.0, **kwargs):
+    def __init__(self, ignore_index:int = -100, label_smoothing:float=0.0, **kwargs):
         super(CELoss, self).__init__()
         self.label_smoothing = label_smoothing
+        self.ignore_index = ignore_index
 
     def forward(self, logits, targets):
-        loss = nn.functional.cross_entropy(logits, targets, label_smoothing=self.label_smoothing)
+        loss = nn.functional.cross_entropy(logits, targets, label_smoothing=self.label_smoothing, ignore_index=self.ignore_index)
         loss_dict = {"CE": loss.item()}
         return loss, loss_dict
 
