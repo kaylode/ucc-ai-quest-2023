@@ -9,12 +9,17 @@ from infection.losses import get_loss
 from transformers import (
     SegformerForSemanticSegmentation,
     MaskFormerForInstanceSegmentation,
-    Mask2FormerForUniversalSegmentation
+    Mask2FormerForUniversalSegmentation,
+    AutoImageProcessor,
+    MaskFormerImageProcessor
 )
 from transformers.modeling_outputs import SemanticSegmenterOutput
 from transformers.models.maskformer.modeling_maskformer import MaskFormerForInstanceSegmentationOutput
-from transformers import MaskFormerImageProcessor
+from transformers.models.mask2former.modeling_mask2former import Mask2FormerForUniversalSegmentationOutput
 from .dinov2 import Dinov2ForSemanticSegmentation
+
+from transformers import AutoProcessor, AutoModelForUniversalSegmentation
+
 
 class SegModel(pl.LightningModule):
     def __init__(
@@ -23,6 +28,7 @@ class SegModel(pl.LightningModule):
             loss_configs:dict=None,
             optimizer_configs:dict=None,
             scheduler_configs:dict=None,
+            postprocessor=None,
         ):
         super(SegModel, self).__init__()
 
@@ -52,21 +58,40 @@ class SegModel(pl.LightningModule):
                 "facebook/maskformer-swin-base-ade",
                 id2label=id2label,
                 label2id=label2id,
-                ignore_mismatched_sizes=True
+                ignore_mismatched_sizes=True,
             )
 
              # Create a preprocessor
-            self.processor = MaskFormerImageProcessor(
-                ignore_index=0, reduce_labels=False, 
-                do_resize=False, do_rescale=False, 
-                do_normalize=False
+            if postprocessor is None:
+                self.processor = MaskFormerImageProcessor(
+                    ignore_index=0, reduce_labels=False, 
+                    do_resize=False, do_rescale=False, 
+                    do_normalize=False
+                )
+            else:
+                self.processor = postprocessor
+
+        elif model_name == 'mask2former':
+            self.net = Mask2FormerForUniversalSegmentation.from_pretrained(
+                "facebook/mask2former-swin-base-coco-panoptic",
+                id2label=id2label,
+                label2id=label2id,
+                ignore_mismatched_sizes=True,
             )
+
+            # Create a preprocessor
+            if postprocessor is None:
+                self.processor = AutoImageProcessor.from_pretrained(
+                    "facebook/mask2former-swin-base-coco-panoptic"
+                )
+            else:
+                self.processor = postprocessor
 
         elif model_name == 'dinov2':
             self.net = Dinov2ForSemanticSegmentation.from_pretrained(
                 "facebook/dinov2-base", 
                 id2label=id2label, 
-                num_labels=len(id2label)
+                num_labels=len(id2label),
             )
         else:
             # example: model_name = "unetplusplus.tf_efficientnetv2_b0"
@@ -83,6 +108,11 @@ class SegModel(pl.LightningModule):
                 encoder_weights = "imagenet",
                 classes=2,
             )
+
+            # freeze backbone except segmentation head
+            for name, parameter in self.net.named_parameters():
+                if "segmentation_head" not in name:
+                    parameter.requires_grad_(True)
         
         if self.loss_configs is not None:
             self.criterion = get_loss(
@@ -114,60 +144,60 @@ class SegModel(pl.LightningModule):
         return out
 
 
-    def forward_with_loss(self, img, mask):
+    def forward_with_loss(self, batch):
         if self.model_name == 'segformer':
             outputs = self.net(
-                pixel_values=img, 
-                labels=mask
+                pixel_values=batch[0], 
+                labels=batch[1]
             )
             loss, logits = outputs.loss, outputs.logits
             with torch.no_grad():
-                out = F.interpolate(logits, size=mask.shape[-2:], mode="bilinear", align_corners=False)
+                out = F.interpolate(logits, size=batch[1].shape[-2:], mode="bilinear", align_corners=False)
             loss_dict = {"T": loss.item()}
-        elif self.model_name == 'maskformer':
+        elif self.model_name == 'maskformer' or self.model_name == 'mask2former':
             # one hot encoding mask
-            onehot_mask = F.one_hot(mask, num_classes=2).permute(0, 3, 1, 2).float()
-            class_labels=torch.Tensor([0, 1]).unsqueeze(0).repeat(img.shape[0], 1).long().cuda()
             outputs = self.net(
-                img,
-                class_labels=class_labels,
-                mask_labels=onehot_mask
+                pixel_values=batch[0],
+                mask_labels=torch.stack(batch[1], dim=0).float(),
+                class_labels=torch.stack(batch[2], dim=0).long(),
             )
             loss, out = outputs.loss, outputs
             loss_dict = {"T": loss.item()}
         elif self.model_name == 'dinov2':
             out = self.net(
-                pixel_values=img, 
+                pixel_values=batch[0], 
             )
-            loss, loss_dict = self.criterion(out, mask)
+            loss, loss_dict = self.criterion(out, batch[1].long())
         else:
-            out = self.forward(img)
-            loss, loss_dict = self.criterion(out, mask)
+            out = self.net(batch[0])
+            loss, loss_dict = self.criterion(out, batch[1].long())
         return out, loss, loss_dict
 
     def training_step(self, batch, batch_nb):
-        img, mask, _ = batch
-        img = img.float()
-        mask = mask.long()
-        _, loss, loss_dict = self.forward_with_loss(img, mask)
+        _, loss, loss_dict = self.forward_with_loss(batch)
         self.log_dict(loss_dict, prog_bar=True, sync_dist=True)
         return loss
 
     def validation_step(self, batch, batch_nb):
-        img, mask, _ = batch
-        img = img.float()
-        mask = mask.long()
-        out, loss, loss_dict = self.forward_with_loss(img, mask)
+        out, loss, loss_dict = self.forward_with_loss(batch)
 
-        if isinstance(out, MaskFormerForInstanceSegmentationOutput):
-            target_sizes = [(mask.shape[1], mask.shape[2]) for i in range(mask.shape[0])]
+        if isinstance(out, (
+                MaskFormerForInstanceSegmentationOutput,
+                Mask2FormerForUniversalSegmentationOutput
+            )
+        ):
+            import pdb; pdb.set_trace()
+            target_sizes = [(batch[0].shape[-2], batch[0].shape[-1]) for i in range(batch[0].shape[0])]
             out = self.processor.post_process_semantic_segmentation(
                 out, target_sizes=target_sizes
             )
             preds = torch.stack(out, dim=0)
+            mask = torch.cat(batch[1], dim=0)
+            import pdb; pdb.set_trace()
         else:
             probs = torch.softmax(out, dim=1)
             preds = torch.argmax(probs, dim=1)
+            mask = batch[1]
 
         preds = preds.detach().cpu().numpy()
         mask = mask.detach().cpu().numpy()
