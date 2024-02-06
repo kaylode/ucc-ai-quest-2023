@@ -71,7 +71,8 @@ class SegDataModule(pl.LightningDataModule):
             self, 
             train_img_dir, train_ann_dir, 
             val_img_dir, val_ann_dir, 
-            batch_size: int = 8, image_size:int=512, use_mosaic:float=0
+            batch_size: int = 8, image_size:int=512, use_mosaic:float=0,
+            stats:str='imagenet'
         ):
         super().__init__()
         self.train_img_dir = train_img_dir
@@ -81,6 +82,7 @@ class SegDataModule(pl.LightningDataModule):
         self.batch_size = batch_size
         self.image_size = image_size
         self.use_mosaic = use_mosaic
+        self.stats = stats
 
     def setup(self, stage: str):
         self.train = SegDataset(
@@ -88,21 +90,21 @@ class SegDataModule(pl.LightningDataModule):
             ann_dir=self.train_ann_dir,
             use_mosaic=self.use_mosaic,
             image_size=self.image_size,
-            transform=get_augmentations("train", image_size=self.image_size),
+            transform=get_augmentations("train", image_size=self.image_size, stats=self.stats),
         )
         self.valid = SegDataset(
             img_dir=self.val_img_dir,
             ann_dir=self.val_ann_dir,
             use_mosaic=0,
             image_size=self.image_size,
-            transform=get_augmentations("valid", image_size=self.image_size)
+            transform=get_augmentations("valid", image_size=self.image_size, stats=self.stats)
         )
 
     def train_dataloader(self):
         return DataLoader(self.train, batch_size=self.batch_size, shuffle=True, drop_last=True, num_workers=4)
 
     def val_dataloader(self):
-        return DataLoader(self.valid, batch_size=self.batch_size, shuffle=False, num_workers=4)
+        return DataLoader(self.valid, batch_size=self.batch_size, shuffle=True, num_workers=4)
 
     def test_dataloader(self):
         return DataLoader(self.valid, batch_size=self.batch_size, shuffle=False, num_workers=4)

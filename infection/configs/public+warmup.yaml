@@ -10,9 +10,10 @@ trainer:
 #     username:  kaylode
 #     project_name: ucc-ai-quest-2023
 #     group_name: public
-loss: 
-  - name: ohem_cross_entropy
+loss:
+  - name: ohem_cross_entropy #cross_entropy #
     args:
+      ignore_index: 0
       thresh: 0.7
   - name: dice
 
@@ -24,8 +25,11 @@ data:
   val_img_dir: data/public+warmup/img/val
   val_ann_dir: data/public+warmup/ann/val
   batch_size: 8
-  image_size: 640
+  image_size: 672
   use_mosaic: 0.2
+  stats: ade
 model:
   model_name: fcn_r50_baseline
+  pretrained: null
+  freeze_backbone: true
    

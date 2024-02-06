@@ -8,6 +8,7 @@ from infection.models import SegModel
 import argparse
 import yaml
 from tqdm import tqdm
+import cv2
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--ckpt_path", '-c', type=str, required=True)
@@ -17,7 +18,6 @@ parser.add_argument("--out_dir", '-o', type=str, default="results/")
 parser.add_argument("--return_probs", action='store_true', default=False)
 
 
-
 def main(args):
     os.makedirs(args.out_dir, exist_ok=True)
 
@@ -25,7 +25,11 @@ def main(args):
     model = SegModel.load_from_checkpoint(args.ckpt_path)
     ds = SegDataset(
         img_dir=args.img_dir,
-        transform=get_augmentations("valid", image_size=config['data'].get('image_size', 512))
+        transform=get_augmentations(
+            "valid", 
+            image_size=config['data'].get('image_size', 512),
+            stats=config['data'].get('stats', 'imagenet')
+        )
     )
     model.eval()
     for i, batch in tqdm(enumerate(ds)):
@@ -42,7 +46,13 @@ def main(args):
         else:
             pred = probs[:,1,...]
         
-        pred = pred.detach().cpu().numpy().squeeze()
+        pred = pred.detach()
+        pred = torch.nn.functional.interpolate(
+            pred.unsqueeze(dim=0), 
+            size=ori_size, 
+            mode="bilinear", align_corners=False
+        ).cpu().squeeze().numpy()
+
         np.save(osp.join(args.out_dir, f"{filename}.npy"), pred)
 
 if __name__ == "__main__":

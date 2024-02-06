@@ -38,6 +38,7 @@ class VisualizerCallback(Callback):
         os.makedirs(self.save_dir, exist_ok=True)
         self.visualizer = Visualizer()
         self.classnames = ['background', 'vegetation']
+        self.params = {}
 
     def on_sanity_check_start(self, trainer: pl.Trainer, pl_module: pl.LightningModule):
         """
@@ -124,7 +125,8 @@ class VisualizerCallback(Callback):
         plt.close()
 
     def on_validation_batch_end(self, trainer: pl.Trainer, pl_module: pl.LightningModule, outputs: STEP_OUTPUT | None, batch: Any, batch_idx: int, dataloader_idx: int = 0) -> None:
-        self.params = {}
+        # add a small hack to prevent the last batch to have only 1 sample when visualizing
+        if batch[0].shape[0] == 1: return
         self.params['last_batch'] = batch
 
     @torch.no_grad()
@@ -134,11 +136,11 @@ class VisualizerCallback(Callback):
         """
         iters = trainer.global_step
         last_batch = self.params['last_batch']
+        self.params = {}
         model = pl_module
 
         # Vizualize model predictions
         model.eval()
-
         images = last_batch[0]
         masks = last_batch[1]
         preds = []

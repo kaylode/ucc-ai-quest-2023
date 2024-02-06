@@ -25,7 +25,11 @@ class SemanticEnsembler:
         filenames = sorted(os.listdir(ann_list[0]))
         for filename in filenames:
             filepaths = [osp.join(ann, filename) for ann in ann_list]
-            stacked_logits = np.stack([np.load(filepath) for filepath in filepaths], axis=0) # [N, H, W]
+            try:
+                stacked_logits = np.stack([np.load(filepath) for filepath in filepaths], axis=0) # [N, H, W]
+            except:
+                print([np.load(filepath).shape for filepath in filepaths])
+                raise ValueError('stacked_logits.shape must be same')
             if reduction == 'sum':
                 if stacked_logits.dtype == 'uint8':
                     raise ValueError('stacked_logits.dtype must be float')

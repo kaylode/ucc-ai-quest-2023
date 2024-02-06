@@ -81,3 +81,7 @@ this will result in a json file for submission in `submissions/submission` folde
 
 > [!TIP]
 > Ensemble method can be run using `scripts/ensemble.sh`. It will gather results from all the npy files generated from `scripts/predict.sh` and combine into a new folder. Then `scripts/submission.sh` can be run to generate submission file from this folder.
+
+
+> [!TIP]
+> A good way to finetune DinoV2: train only the segmentation head of DinoV2 with the backbone frozen, trained for a few epochs with normal learning rate (~1e-3). Then unfreeze all the layers and finetune with small learning rate (<=1e-5).

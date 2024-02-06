@@ -1,4 +1,8 @@
+PHASE=$1
+MODEL_NAME=$2
+
 python yolov8/train.py \
-    -n yolov8m \
-    -cfg yolov8/data.yml \
-    -sz 640
+    -n $MODEL_NAME \
+    -cfg yolov8/$PHASE.yml \
+    -sz 640 \
+    --phase $PHASE

@@ -1,6 +1,6 @@
 PHASE=$1
 MODEL_NAME=$2
-RUN_NAME=${MODEL_NAME}_diceohemce_mosaic
+RUN_NAME=${MODEL_NAME}
 
 PYTHONPATH=. python infection/tools/train.py \
     --config-dir infection/configs \
