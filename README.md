@@ -4,6 +4,8 @@ We are team Infection. This repository demonstrates our methods in the UCC AI Qu
 
 A brief introduction of the competition:
 > Cork is blessed with breathtaking landscapes and serene greenery. This year, UCC AI Quest will focus on stunning aerial images of a high-resolution camera to recognise vegetation patches in Irish natural places. The challenge aims to foster the development of reliable artificial intelligence models with the goal of informing sustainable development. It includes the release of a new dataset of realistic drone images for benchmarking semantic segmentation from various above ground levels. There are a number of awards for the best team (€5,000), the most creative solution (€1,000) and the top women of influence (€1,000). Read more about the competition on their [website](https://challenges.ai/ucc-ai-quest-2023).
+![alt](assets/drone-image.jpg)
+
 
 ## Highlighted techniques 
 
@@ -33,6 +35,7 @@ A brief introduction of the competition:
      </p>
     </details>
 
+- [Technical report](assets/ucc-ai-quest-infection-technical_report.pdf) and [slides](assets/ucc-ai-quest-infection-slides.pdf) are included
 
 ## Data
 
